@@ -623,7 +623,7 @@ def megaFoil(allEquations):
             # each monomial in the other equation
             for otherMonomial in allEquations[equationIndex]:
 
-                # we have an operatort
+                # we have an operator
                 if otherMonomial == "+":
 
                     # go to next iteration of loop
@@ -640,7 +640,58 @@ def megaFoil(allEquations):
 # takes in an equation in string form, returns a spliced equation
 def spliceEquation(rawEquation):
 
+    # 0 or 1 real numbers
+    num = "(-?[0-9]*\.?[0-9]*)"
+
+    # any letter 0 or 1 times
+    let = "([a-z][A-Z]?)"
+
+    # an exponent
+    exponent = "(?:\^{(.*?)\})*"
+
+    # full splicer
+    full = num + "(?:" + let + exponent + ")?"
+
+    # remove all spaces
+    noSpaces = rawEquation.replace(" ", "")
+
+    # split on operators (+, -, *, /)
+    monomials = re.split("\+|-|\*|/", noSpaces)
+
+    print(monomials)
+
+    splicedMonomials = []
+
+    # find number or/and variable or/and exponent
+    for item in monomials:
+        splicedMonomials.append(re.findall(full, item))
+
+    print(splicedMonomials)
+
+    # loop through all numbers
+    for nested in splicedMonomials:
+
+        # check for empty list
+        if ('', '', '') in nested:
+
+            # remove empty lists ('', '', '')
+            nested.remove(('', '', ''))
+
+    print(splicedMonomials)
 
 
-rawEquation = "7x^{3} + 6x^{4}y^{5} - 9"
+rawEquation = "7.5x^{3} + .6x^{4}y^{5} - 0.9"
+
+spliceEquation(rawEquation)
+# return value
+
+
+
+
+
+
+
+
+
+
 
