@@ -526,9 +526,28 @@ def humanReadableEquation(equation):
 
         # must be a monomial (class mono)
         else:
+            # readable monomial in string form
+            itemReadable = item.humanReadable()
+
+            # negative number
+            if '-' in itemReadable:
+
+                # remove negative
+                itemReadable = itemReadable.replace("-", "")
+
+                # if something happens and fucks everything up
+                if readableEquation[-2] != "+":
+
+                    print("SOMETHING BAD HAPPENDS")
+                    print(readableEquation)
+                    # stop program
+                    exit()
+
+                # change + negative to subtraction
+                readableEquation = readableEquation[:-2] + "- "
 
             # add a string that represents item to our final string
-            readableEquation += item.humanReadable()
+            readableEquation += itemReadable
 
     # return a readable representation of given input (equation)
     return readableEquation
@@ -706,17 +725,32 @@ def spliceEquation(rawEquation):
     # initialize the equation return list
     finalEquation = []
 
+    # used to determine wither or not an operator should come next
+    operatorNext = False
+
     # iterate through spliced data
     for chunk in splicedMonomials:
 
         # iterate through monomials/operators
         for mini in chunk:
 
-            # mini is an operator
-            if mini[-1] != '':
+            # add an operator
+            if operatorNext:
 
-                # add operator to final equation
-                finalEquation.append(mini[-1])
+                # mini is an operator
+                if mini[-1] != '':
+
+                    # add operator to final equation
+                    finalEquation.append(mini[-1])
+
+                # add an addition symbol
+                else:
+
+                    # addition symbol fill in
+                    finalEquation.append("+")
+
+                # add a monomial next iteration
+                operatorNext = False
 
             # mini is a number
             else:
@@ -724,18 +758,19 @@ def spliceEquation(rawEquation):
                 # create a mono and add it to our final equation
                 finalEquation.append(mono(mini[0], {mini[1]: mini[2]}))
 
+                # next iteration add an operator
+                operatorNext = True
+
+    #
     return finalEquation
 
 
 rawEquation = "7.5x^{3} / .6x^{4}y^{5} - 0.9"
 
 readable = humanReadableEquation(spliceEquation(rawEquation))
-
+print(spliceEquation(rawEquation))
 print(readable)
 
-flute = Fraction(.25).limit_denominator()
-print("flute:", flute)
-print(flute*4)
 
 
 
