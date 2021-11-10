@@ -1,4 +1,5 @@
 import re
+from fractions import Fraction
 
 
 # holds information inside a set of brackets sqrt, abs, (), [], etc
@@ -14,12 +15,37 @@ class brackets:
 
 # monomial class
 class mono:
-    def __init__(self, coefficient=1.0, variables=None):
+    def __init__(self, coefficient, variables):
 
-        # this is a float but is often an integer, by default it's 1
-        if variables is None:
-            variables = {}
-        self.coefficient = coefficient
+        # no coefficient
+        if coefficient == '':
+
+            # set coefficient to default
+            self.coefficient = Fraction(1).limit_denominator()
+
+        # coefficient given
+        else:
+            # set coefficient to a fraction type
+            self.coefficient = Fraction(float(coefficient)).limit_denominator()
+
+        # iterate through variables
+        for var in variables.copy():
+
+            # no variable given
+            if var == '':
+                del variables[var]
+
+            # no exponent given
+            elif variables[var] == '':
+
+                # set var's exponent to the default of 1
+                variables[var] = Fraction(1).limit_denominator()
+
+            # var has an exponent that isn't 1
+            else:
+
+                # change from a string to a fraction
+                variables[var] = Fraction(variables[var]).limit_denominator()
 
         # this would be a dictionary of letters and their corresponding exponents like so:
         # {'x': 3, 'y': 1}, by default this dictionary is empty
@@ -83,7 +109,7 @@ class mono:
                 else:
 
                     # save the coefficient as a string
-                    returnString += str(self.coefficient)
+                    returnString += "(" + str(self.coefficient) + ")"
 
             # add all the variables and exponents to the return string
             for var in self.variables:
@@ -95,7 +121,7 @@ class mono:
                 if self.variables[var] > 1:
 
                     # add to return string
-                    returnString += "^" + str(self.variables[var])
+                    returnString += "^{" + str(self.variables[var]) + "}"
 
         # return string
         return returnString
@@ -650,47 +676,66 @@ def spliceEquation(rawEquation):
     exponent = "(?:\^{(.*?)\})*"
 
     # full splicer
-    full = num + "(?:" + let + exponent + ")?"
+    full = num + "(?:" + let + exponent + ")?|(/|\*)?"
 
     # remove all spaces
     noSpaces = rawEquation.replace(" ", "")
 
-    # split on operators (+, -, *, /)
-    monomials = re.split("\+|-|\*|/", noSpaces)
+    # switch from x - y to x + -y
+    noSpaces = noSpaces.replace("-", "+-")
 
-    print(monomials)
+    # split on operators (+, *, /)
+    monomials = re.split("\+", noSpaces)
 
+    # initialize a list
     splicedMonomials = []
 
     # find number or/and variable or/and exponent
     for item in monomials:
         splicedMonomials.append(re.findall(full, item))
 
-    print(splicedMonomials)
-
     # loop through all numbers
     for nested in splicedMonomials:
 
         # check for empty list
-        if ('', '', '') in nested:
+        while ('', '', '', '') in nested:
 
-            # remove empty lists ('', '', '')
-            nested.remove(('', '', ''))
+            # remove empty lists ('', '', '', '')
+            nested.remove(('', '', '', ''))
 
-    print(splicedMonomials)
+    # initialize the equation return list
+    finalEquation = []
+
+    # iterate through spliced data
+    for chunk in splicedMonomials:
+
+        # iterate through monomials/operators
+        for mini in chunk:
+
+            # mini is an operator
+            if mini[-1] != '':
+
+                # add operator to final equation
+                finalEquation.append(mini[-1])
+
+            # mini is a number
+            else:
+
+                # create a mono and add it to our final equation
+                finalEquation.append(mono(mini[0], {mini[1]: mini[2]}))
+
+    return finalEquation
 
 
-rawEquation = "7.5x^{3} + .6x^{4}y^{5} - 0.9"
+rawEquation = "7.5x^{3} / .6x^{4}y^{5} - 0.9"
 
-spliceEquation(rawEquation)
-# return value
+readable = humanReadableEquation(spliceEquation(rawEquation))
 
+print(readable)
 
-
-
-
-
-
+flute = Fraction(.25).limit_denominator()
+print("flute:", flute)
+print(flute*4)
 
 
 
