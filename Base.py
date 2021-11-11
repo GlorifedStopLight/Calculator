@@ -725,50 +725,48 @@ def spliceEquation(rawEquation):
     # initialize the equation return list
     finalEquation = []
 
-    # used to determine wither or not an operator should come next
-    operatorNext = False
-
     # iterate through spliced data
-    for chunk in splicedMonomials:
+    for chunkIndex in range(len(splicedMonomials)):
+
+        # remember what was added last iteration
+        previousWasMono = False
 
         # iterate through monomials/operators
-        for mini in chunk:
+        for mini in splicedMonomials[chunkIndex]:
 
-            # add an operator
-            if operatorNext:
+            # mini is an operator
+            if mini[-1] != '':
 
-                # mini is an operator
-                if mini[-1] != '':
+                # add operator to final equation
+                finalEquation.append(mini[-1])
 
-                    # add operator to final equation
-                    finalEquation.append(mini[-1])
-
-                # add an addition symbol
-                else:
-
-                    # addition symbol fill in
-                    finalEquation.append("+")
-
-                # add a monomial next iteration
-                operatorNext = False
+                # last added was an operator
+                previousWasMono = False
 
             # mini is a number
             else:
 
+                # last added a monomial
+                if previousWasMono:
+
+                    # add a multiplication sign
+                    finalEquation.append('*')
+
                 # create a mono and add it to our final equation
                 finalEquation.append(mono(mini[0], {mini[1]: mini[2]}))
 
-                # next iteration add an operator
-                operatorNext = True
+                # last added a monomial
+                previousWasMono = True
 
-    #
+        if chunkIndex + 1 != len(splicedMonomials):
+            finalEquation.append("+")
+
+    # give spliced equation
     return finalEquation
 
 
 rawEquation = "7.5x^{3} / .6x^{4}y^{5} - 0.9"
-
 readable = humanReadableEquation(spliceEquation(rawEquation))
-print(spliceEquation(rawEquation))
 print(readable)
 
 
