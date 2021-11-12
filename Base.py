@@ -249,7 +249,7 @@ def dividedBy(x, y):
     changedY = mono(changedYCoefficient, twoChangedVariables[1]).pemdasCleanUp()
 
     # return altered monomials
-    return [changedX, '/', changedY]
+    return [changedX, '/.', changedY]
 
 
 # factors a polynomial given 3 monomials
@@ -517,6 +517,12 @@ def humanReadableEquation(equation):
 
                 # add item to readableEquation with buffer space
                 readableEquation += " " + item + " "
+
+            # item is a simplified division
+            elif item == "/.":
+
+                # add division to equation
+                readableEquation += " / "
 
             # PROBABLY the only other character it would be is a type of brackets
             else:
@@ -789,41 +795,41 @@ def simplifyNoBracketEquation(equation):
                     # solve part of the equation
                     miniAnswer = times(equation.pop(customIndex-1), equation.pop(customIndex))
 
+                    # remove operator
+                    del equation[customIndex - 1]
+
                     # loop through elements
                     for itemIndex in range(len(miniAnswer)):
-
-                        # remove operator
-                        del equation[customIndex-1]
 
                         # add miniAnswer to equation
                         equation.insert(customIndex + itemIndex - 1, miniAnswer[itemIndex])
 
-                        # make a new for loop
-                        newForLoop = True
+                    # make a new for loop
+                    newForLoop = True
 
-                        # end this one
-                        break
+                    # end this one
+                    break
 
                 # do division
-                else:
+                if equation[customIndex] == "/":
 
                     # solve part of the equation
                     miniAnswer = dividedBy(equation.pop(customIndex-1), equation.pop(customIndex))
 
+                    # remove operator
+                    del equation[customIndex - 1]
+
                     # loop through elements of mini answer
                     for itemIndex in range(len(miniAnswer)):
-
-                        # remove operator
-                        del equation[customIndex - 1]
 
                         # add miniAnswer to equation
                         equation.insert(customIndex + itemIndex - 1, miniAnswer[itemIndex])
 
-                        # make a new for loop
-                        newForLoop = True
+                    # make a new for loop
+                    newForLoop = True
 
-                        # end this one
-                        break
+                    # end this one
+                    break
 
             # there is either addition or subtraction
             elif equation[customIndex] in "+-":
@@ -834,20 +840,20 @@ def simplifyNoBracketEquation(equation):
                     # solve part of the equation
                     miniAnswer = plus(equation.pop(customIndex-1), equation.pop(customIndex))
 
+                    # remove operator
+                    del equation[customIndex - 1]
+
                     # loop through elements of mini answer
                     for itemIndex in range(len(miniAnswer)):
-
-                        # remove operator
-                        del equation[customIndex - 1]
 
                         # add miniAnswer to equation
                         equation.insert(customIndex + itemIndex - 1, miniAnswer[itemIndex])
 
-                        # make a new for loop
-                        newForLoop = True
+                    # make a new for loop
+                    newForLoop = True
 
-                        # end this one
-                        break
+                    # end this one
+                    break
 
                 # do subtraction
                 else:
@@ -865,12 +871,14 @@ def simplifyNoBracketEquation(equation):
     return equation
 
 
-rawEquationInput = "3x/6x"
+rawEquationInput = "3x^{2}/6x"
 
 spliced = spliceEquation(rawEquationInput)
 
 readable = humanReadableEquation(spliced)
 print(readable)
+
+nonReadableAnswer = simplifyNoBracketEquation(spliced)
 
 print(humanReadableEquation(simplifyNoBracketEquation(spliced)))
 
