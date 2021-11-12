@@ -154,14 +154,13 @@ def minus(x, y):
     if x.variables == y.variables:
 
         # return answer
-        return mono(x.coefficient - y.coefficient).pemdasCleanUp()
+        return [mono(x.coefficient - y.coefficient, x.variables).pemdasCleanUp()]
 
     # variables or exponents are NOT the same
     else:
 
-        # give an error, exit the program
-        print("Error: these can't be subtracted")
-        exit()
+        # return the monomials unchanged with operator
+        return [x, '-', y]
 
 
 # x monomial plus y monomial
@@ -171,14 +170,13 @@ def plus(x, y):
     if x.variables == y.variables:
 
         # return answer
-        return mono(x.coefficient - y.coefficient).pemdasCleanUp()
+        return [mono(x.coefficient + y.coefficient, x.variables).pemdasCleanUp()]
 
     # variables or exponents are NOT the same
     else:
 
-        # give an error, exit the program
-        print("Error: these can't be added")
-        exit()
+        # return the monomials unchanged with operator
+        return [x, '+', y]
 
 
 # x monomial times y monomial
@@ -191,7 +189,7 @@ def times(x, y):
     newVariables = multiplyMonoVariables(x.variables, y.variables)
 
     # create new mono object and return
-    return mono(newCoefficient, newVariables).pemdasCleanUp()
+    return [mono(newCoefficient, newVariables).pemdasCleanUp()]
 
 
 # takes in two dictionaries returns a dictionary with all keys
@@ -239,6 +237,8 @@ def dividedBy(x, y):
     changedXCoefficient = x.coefficient / divideBothBy
     changedYCoefficient = y.coefficient / divideBothBy
 
+    newCoefficient = Fraction(x.coefficient / y.coefficient)
+
     # merge the two dictionaries
     twoChangedVariables = divideMonoVariables(x.variables, y.variables)
 
@@ -249,7 +249,7 @@ def dividedBy(x, y):
     changedY = mono(changedYCoefficient, twoChangedVariables[1]).pemdasCleanUp()
 
     # return altered monomials
-    return [changedX, "/", changedY]
+    return [changedX, '/', changedY]
 
 
 # factors a polynomial given 3 monomials
@@ -631,19 +631,6 @@ def equationNoBracketsIsFullySimplified(equation):
     return True
 
 
-# simplifies a equation with no brackets
-def simplifyNoBracketEquation(equation):
-
-    # new definitely simplified equation
-    simplifiedEquation = []
-
-    # sometimes there are equations with operators that can not be simplified any further
-    # so
-    operatorsThatAreCool = []
-
-    # loop through list
-
-
 # multiplies equations against each other like foil but with any number of equations with varying length\
 # give a list of equations (list of lists)
 # these equations should have only addition in them
@@ -765,9 +752,127 @@ def spliceEquation(rawEquation):
     return finalEquation
 
 
-rawEquation = "7.5x^{3} / .6x^{4}y^{5} - 0.9"
-readable = humanReadableEquation(spliceEquation(rawEquation))
+# simplifies a equation with no brackets
+def simplifyNoBracketEquation(equation):
+
+    # determines whether or not to start a new for loop
+    newForLoop = True
+
+    # when we want another for loop
+    while newForLoop:
+
+        # if we don't find any operators in the equation we will stop
+        newForLoop = False
+
+        # set index for the while loop
+        customIndex = 0
+
+        # set the length of the equation
+        lengthOfEquation = len(equation)
+
+        # iterate through equation with custom for loop
+        while customIndex < lengthOfEquation:
+
+            # on a monomial not an operator
+            if type(equation[customIndex]) != str:
+
+                # go to next iteration
+                customIndex += 1
+                continue
+
+            # either multiplication or division
+            if equation[customIndex] in "*/":
+
+                # do multiplication
+                if equation[customIndex] == "*":
+
+                    # solve part of the equation
+                    miniAnswer = times(equation.pop(customIndex-1), equation.pop(customIndex))
+
+                    # loop through elements
+                    for itemIndex in range(len(miniAnswer)):
+
+                        # remove operator
+                        del equation[customIndex-1]
+
+                        # add miniAnswer to equation
+                        equation.insert(customIndex + itemIndex - 1, miniAnswer[itemIndex])
+
+                        # make a new for loop
+                        newForLoop = True
+
+                        # end this one
+                        break
+
+                # do division
+                else:
+
+                    # solve part of the equation
+                    miniAnswer = dividedBy(equation.pop(customIndex-1), equation.pop(customIndex))
+
+                    # loop through elements of mini answer
+                    for itemIndex in range(len(miniAnswer)):
+
+                        # remove operator
+                        del equation[customIndex - 1]
+
+                        # add miniAnswer to equation
+                        equation.insert(customIndex + itemIndex - 1, miniAnswer[itemIndex])
+
+                        # make a new for loop
+                        newForLoop = True
+
+                        # end this one
+                        break
+
+            # there is either addition or subtraction
+            elif equation[customIndex] in "+-":
+
+                # do addition
+                if equation[customIndex] == "+":
+
+                    # solve part of the equation
+                    miniAnswer = plus(equation.pop(customIndex-1), equation.pop(customIndex))
+
+                    # loop through elements of mini answer
+                    for itemIndex in range(len(miniAnswer)):
+
+                        # remove operator
+                        del equation[customIndex - 1]
+
+                        # add miniAnswer to equation
+                        equation.insert(customIndex + itemIndex - 1, miniAnswer[itemIndex])
+
+                        # make a new for loop
+                        newForLoop = True
+
+                        # end this one
+                        break
+
+                # do subtraction
+                else:
+                    # panic
+                    print("there is subtraction PANIC")
+                    exit()
+
+            # next iteration of custom for loop
+            customIndex += 1
+
+            # reset the length of the equation variable
+            lengthOfEquation = len(equation)
+
+    # return simplified equation
+    return equation
+
+
+rawEquationInput = "3x/6x"
+
+spliced = spliceEquation(rawEquationInput)
+
+readable = humanReadableEquation(spliced)
 print(readable)
+
+print(humanReadableEquation(simplifyNoBracketEquation(spliced)))
 
 
 
