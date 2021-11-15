@@ -160,7 +160,8 @@ def minus(x, y):
     else:
 
         # return the monomials unchanged with operator
-        return [x, '-', y]
+        # period shows it's in simplest form
+        return [x, '-.', y]
 
 
 # x monomial plus y monomial
@@ -176,7 +177,8 @@ def plus(x, y):
     else:
 
         # return the monomials unchanged with operator
-        return [x, '+', y]
+        # period shows that this is in simplest form
+        return [x, '+.', y]
 
 
 # x monomial times y monomial
@@ -696,7 +698,12 @@ def spliceEquation(rawEquation):
     # switch from x - y to x + -y
     noSpaces = noSpaces.replace("-", "+-")
 
-    # split on operators (+, *, /)
+    # find smallest set of brackets
+    brackets = re.search("\([^(]*?\)", noSpaces)
+
+    print(brackets)
+
+    # split on + signs
     monomials = re.split("\+", noSpaces)
 
     # initialize a list
@@ -705,6 +712,8 @@ def spliceEquation(rawEquation):
     # find number or/and variable or/and exponent
     for item in monomials:
         splicedMonomials.append(re.findall(full, item))
+
+    # take a list of strings with numbers
 
     # loop through all numbers
     for nested in splicedMonomials:
@@ -780,7 +789,10 @@ def simplifyNoBracketEquation(equation):
         while customIndex < lengthOfEquation:
 
             # on a monomial not an operator
-            if type(equation[customIndex]) != str:
+            # current is subtraction/addition but there is multiplication/division (NEXT ITERATION)
+            if type(equation[customIndex]) != str or \
+                    "*" in equation and equation[customIndex] in "+-" or \
+                    "/" in equation and equation[customIndex] in "+-":
 
                 # go to next iteration
                 customIndex += 1
@@ -871,7 +883,8 @@ def simplifyNoBracketEquation(equation):
     return equation
 
 
-rawEquationInput = "3x^{2}/6x"
+rawEquationInput = "3 * (10 + (4 * 2) + 3)"
+rawEquationInput = "7x + 3x * 2"
 
 spliced = spliceEquation(rawEquationInput)
 
