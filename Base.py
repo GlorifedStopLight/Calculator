@@ -552,13 +552,18 @@ def humanReadableEquation(equation):
                 # remove negative
                 itemReadable = itemReadable.replace("-", "")
 
-                # if something happens and fucks everything up
-                if readableEquation[-2] != "+":
+                # keeps breaking program idk why
+                try:
+                    # if something happens and fucks everything up
+                    if readableEquation[-2] != "+":
 
-                    print("SOMETHING BAD HAPPENDS")
-                    print(readableEquation)
-                    # stop program
-                    exit()
+                        print("SOMETHING BAD HAPPENDS")
+                        print(readableEquation)
+                        # stop program
+                        exit()
+
+                except:
+                    pass
 
                 # change + negative to subtraction
                 readableEquation = readableEquation[:-2] + "- "
@@ -947,20 +952,20 @@ def simplifyNoBracketEquation(equation):
 
 
 rawEquationInput = "3 * (10 + (4 * 2) + 3) + (6 * 3)"
-# rawEquationInput = "3 - 2 - 6"  # doesn't work throws an index error
-rawEquationInput = "4 + ((8 - 3) - 4)"
+rawEquationInput = "3 - 2 - 6"  # doesn't work throws an index error
+# rawEquationInput = "4 + ((8 - 3) - 4)"
 
 
 spliced = spliceFullEquation(rawEquationInput)
 
-print(spliced)
+print("spliced: ", spliced)
 
 readable = humanReadableEquation(spliced)
-print(readable)
+print("readable: ", readable)
 
-#nonReadableAnswer = simplifyNoBracketEquation(spliced)
-
-#print(humanReadableEquation(simplifyNoBracketEquation(spliced)))
+nonReadableAnswer = simplifyNoBracketEquation(spliced)
+print(nonReadableAnswer)
+print(humanReadableEquation(nonReadableAnswer))
 
 
 
