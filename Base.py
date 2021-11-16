@@ -678,7 +678,7 @@ def megaFoil(allEquations):
 
 
 # takes in an equation in string form, returns a spliced equation
-def spliceEquation(rawEquation):
+def spliceSingleEquation(rawEquation):
 
     # 0 or 1 real numbers
     num = "(-?[0-9]*\.?[0-9]*)"
@@ -687,42 +687,37 @@ def spliceEquation(rawEquation):
     let = "([a-z][A-Z]?)"
 
     # an exponent
-    exponent = "(?:\^{(.*?)\})*"
+    exponent = "(?:\^{(.*?)})*"
 
     # full splicer
-    full = num + "(?:" + let + exponent + ")?|(/|\*)?"
+    full = num + "(?:" + let + exponent + ")?|(/|\*|\+)?" + "|(\[[0-9]*\])"
 
     # remove all spaces
     noSpaces = rawEquation.replace(" ", "")
 
     # switch from x - y to x + -y
-    noSpaces = noSpaces.replace("-", "+-")
-
-    # find smallest set of brackets
-    brackets = re.search("\([^(]*?\)", noSpaces)
-
-    print(brackets)
-
-    # split on + signs
-    monomials = re.split("\+", noSpaces)
+    monomials = noSpaces.replace("-", "+-")
 
     # initialize a list
     splicedMonomials = []
 
     # find number or/and variable or/and exponent
-    for item in monomials:
-        splicedMonomials.append(re.findall(full, item))
-
-    # take a list of strings with numbers
+    splicedMonomials.append(re.findall(full, monomials))
 
     # loop through all numbers
     for nested in splicedMonomials:
 
         # check for empty list
-        while ('', '', '', '') in nested:
+        while ('', '', '', '', '') in nested:
 
-            # remove empty lists ('', '', '', '')
-            nested.remove(('', '', '', ''))
+            # remove empty lists ('', '', '', '', '')
+            nested.remove(('', '', '', '', ''))
+
+    # empty list in splicedMonomials
+    while [] in splicedMonomials:
+
+        # remove empty list
+        splicedMonomials.remove([])
 
     # initialize the equation return list
     finalEquation = []
@@ -730,41 +725,99 @@ def spliceEquation(rawEquation):
     # iterate through spliced data
     for chunkIndex in range(len(splicedMonomials)):
 
-        # remember what was added last iteration
-        previousWasMono = False
-
         # iterate through monomials/operators
         for mini in splicedMonomials[chunkIndex]:
 
             # mini is an operator
-            if mini[-1] != '':
+            if mini[3] != '':
 
                 # add operator to final equation
-                finalEquation.append(mini[-1])
-
-                # last added was an operator
-                previousWasMono = False
+                finalEquation.append(mini[3])
 
             # mini is a number
-            else:
-
-                # last added a monomial
-                if previousWasMono:
-
-                    # add a multiplication sign
-                    finalEquation.append('*')
+            elif mini[4] == '':
 
                 # create a mono and add it to our final equation
                 finalEquation.append(mono(mini[0], {mini[1]: mini[2]}))
 
-                # last added a monomial
-                previousWasMono = True
-
-        if chunkIndex + 1 != len(splicedMonomials):
-            finalEquation.append("+")
+            # mini is a placeholder for a set of brackets
+            elif mini[4] != '':
+                finalEquation.append(mini[4])
 
     # give spliced equation
     return finalEquation
+
+
+# same as spliceSingleEquation but handles parentheses
+def spliceFullEquation(rawEquation):
+
+    # re code to get a bracket set
+    smallestBracketCode = "\([^(]*?\)"
+
+    # keep track of what should be inserted where (key = location, value = bracket contents)
+    bracketDict = {}
+
+    # determines what set of brackets goes where
+    bracketsSavedCounter = 0
+
+    # iterate through strings inside equationList
+    while "(" in rawEquation:
+
+        # get the set of brackets inside
+        bracketInfo = re.search(smallestBracketCode, rawEquation)
+
+        # the location of the bracket set from [bracketIndexes[0] : bracketIndexes[1]]
+        bracketIndexes = bracketInfo.span()
+
+        # the content of the brackets
+        bracketContent = bracketInfo.group()
+
+        # add bracketContent to our bracketDict
+        bracketDict[str(bracketsSavedCounter)] = spliceSingleEquation(bracketContent)
+
+        # replace the contents of the bracket in the string with square brackets and the number that is used to find
+        # the corresponding bracket content (from bracketDict)
+        rawEquation = rawEquation[:bracketIndexes[0]] + "[" + str(bracketsSavedCounter) + "]" + \
+            rawEquation[bracketIndexes[1]:]
+
+        # next iteration of bracket saving
+        bracketsSavedCounter += 1
+
+    # splice the changed string
+    finalEquationList = spliceSingleEquation(rawEquation)
+
+    # splice string and fill in the bracket placeholders with the corresponding bracket sets
+    recursiveSpliceInsert(finalEquationList, bracketDict)
+
+    # finalEquationList is the final output
+    return finalEquationList
+
+
+# a recursive function that takes in a list and returns None
+def recursiveSpliceInsert(equationList: list, bracketLocationDict: dict) -> None:
+
+    # equationList is a result of spliceSingleEquation()
+
+    # check for bracket placeholders inside equationList
+    for itemIndex in range(len(equationList)):
+
+        # found a string (could be either an operator or a bracket placeholder)
+        if type(equationList[itemIndex]) == str:
+
+            # string matches placeholder syntax
+            if re.search("\[[0-9]+\]", equationList[itemIndex]):
+
+                # string to pass to bracketLocationDict
+                bracketToInsertPlacementNumber = re.findall("\[([0-9]+)\]", equationList[itemIndex])[0]
+
+                # replace placeholder with bracketContents
+                equationList[itemIndex] = bracketLocationDict[bracketToInsertPlacementNumber]
+
+                # call this function on the newly added brackets
+                recursiveSpliceInsert(equationList[itemIndex], bracketLocationDict)
+
+    # returns nothing changes the equationList list reference
+    return None
 
 
 # simplifies a equation with no brackets
@@ -883,17 +936,21 @@ def simplifyNoBracketEquation(equation):
     return equation
 
 
-rawEquationInput = "3 * (10 + (4 * 2) + 3)"
-rawEquationInput = "7x + 3x * 2"
+rawEquationInput = "3 * (10 + (4 * 2) + 3) + (6 * 3)"
+# rawEquationInput = "3 - 2 - 6"  # doesn't work throws an index error
+rawEquationInput = "4 + ((8 - 3) - 4)"
 
-spliced = spliceEquation(rawEquationInput)
 
-readable = humanReadableEquation(spliced)
-print(readable)
+spliced = spliceFullEquation(rawEquationInput)
 
-nonReadableAnswer = simplifyNoBracketEquation(spliced)
+print(spliced)
 
-print(humanReadableEquation(simplifyNoBracketEquation(spliced)))
+#readable = humanReadableEquation(spliced)
+#print(readable)
+
+#nonReadableAnswer = simplifyNoBracketEquation(spliced)
+
+#print(humanReadableEquation(simplifyNoBracketEquation(spliced)))
 
 
 
