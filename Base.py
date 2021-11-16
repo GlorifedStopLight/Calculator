@@ -532,6 +532,15 @@ def humanReadableEquation(equation):
                 # add brackets (which is item in this instance) to final string
                 readableEquation += item
 
+        # found brackets
+        elif type(item) == list:
+
+            # turn into string
+            bracketHumanReadable = humanReadableEquation(item)
+
+            # add string into readableEquation
+            readableEquation += "(" + bracketHumanReadable + ")"
+
         # must be a monomial (class mono)
         else:
             # readable monomial in string form
@@ -922,6 +931,7 @@ def simplifyNoBracketEquation(equation):
 
                 # do subtraction
                 else:
+
                     # panic
                     print("there is subtraction PANIC")
                     exit()
@@ -945,8 +955,8 @@ spliced = spliceFullEquation(rawEquationInput)
 
 print(spliced)
 
-#readable = humanReadableEquation(spliced)
-#print(readable)
+readable = humanReadableEquation(spliced)
+print(readable)
 
 #nonReadableAnswer = simplifyNoBracketEquation(spliced)
 
