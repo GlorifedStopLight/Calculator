@@ -233,7 +233,7 @@ def multiplyMonoVariables(dict1, dict2):
 def dividedBy(x, y):
 
     # divide both x.co, y.co by this number to get the new x, and y coefficients
-    divideBothBy = findGreatestCommonMultiple([x.coefficient, y.coefficient])
+    divideBothBy = findCommonMono([x, y]).coefficient
 
     # calculate new coefficients from 4/8 ---> 1/2
     changedXCoefficient = x.coefficient / divideBothBy
@@ -250,50 +250,14 @@ def dividedBy(x, y):
     # new denominator (y)
     changedY = mono(changedYCoefficient, twoChangedVariables[1]).pemdasCleanUp()
 
+    # changedX is over 1 just return changedX
+    if len(changedY.variables) == 0 and changedY.coefficient == 1:
+
+        # return just changedX
+        return [changedX]
+
     # return altered monomials
     return [changedX, '/.', changedY]
-
-
-# factors a polynomial given 3 monomials
-def factorPolynomial(x, y, z):
-
-    # if this is a cubed function
-    outside = findCommon([x, y, z])
-
-    # divide each value by their common monomial (outside)
-    x = dividedBy(x, outside)
-    y = dividedBy(y, outside)
-    z = dividedBy(z, outside)
-
-
-
-    # find the numbers that will replace y
-    yReplacement = findAddToMultiplyTo(y.coefficient, x.coefficient * z.coefficient)
-
-    # make yReplacement into two monomials
-    xMiddle = mono(yReplacement[0], y.variables)
-    zMiddle = mono(yReplacement[1], y.variables)
-
-    # the value that will be divided out of x and xMiddle
-    takeOutOfX = findCommon([x, xMiddle])
-
-    # makes the takeOutOf negative if both are negative
-    if x.coefficient < 0 and xMiddle.coefficient < 0:
-        takeOutOfX.coefficient = takeOutOfX.coefficient * -1
-
-    # same as takeOutOfX
-    takeOutOfZ = findCommon([z, zMiddle])
-
-    # makes the takeOutOf negative if both are negative
-    if z.coefficient < 0 and zMiddle.coefficient < 0:
-        takeOutOfZ.coefficient = takeOutOfZ.coefficient * -1
-
-    # factor out common factors for x
-    x = dividedBy(x, takeOutOfX)
-    xMiddle = dividedBy(xMiddle, takeOutOfX)
-
-    # give back the value factored out at the beginning and other stuff
-    return outside, takeOutOfX, takeOutOfZ, x, xMiddle
 
 
 # takes in a list of integers
@@ -329,6 +293,8 @@ def findGreatestCommonMultiple(integers):
 
         # found the greatest common multiple
         if foundGreatestCommonMultiple:
+
+            # return commonDivider
             return commonDivider
 
     # if at the end of the for loop no common multiple is found then the only common multiple is 1
@@ -336,7 +302,7 @@ def findGreatestCommonMultiple(integers):
 
 
 # takes in an array of monomials returns a common monomial
-def findCommon(monomials):
+def findCommonMono(monomials):
 
     # start big narrow down
     # the first monomial will set the scene
@@ -350,6 +316,12 @@ def findCommon(monomials):
 
     # find the common multiple of the coefficients
     commonCoefficient = findGreatestCommonMultiple(allCoefficients)
+
+    # all coefficients are negative
+    if all([num < 0 for num in allCoefficients]):
+
+        # make commonCoefficient negative
+        commonCoefficient *= -1
 
     # fill this variable with something then slowly remove from it
     commonVariables = monomials[0].variables.copy()
@@ -436,50 +408,6 @@ def algebra(leftSide, rightSide, solveForMe):
     pass
 
 
-# takes in 2 monomials and an operator
-# if x <op> y is in simplest terms return True else: return False
-def isSingleSimplified(x, op, y):
-
-    # adding or subtracting
-    if op == "+" or op == "-":
-
-        # can add or subtract
-        if x.variables == y.variables:
-
-            # x <op> y is not in simplest terms
-            return False
-
-        # can't add or subtract the because variables are not the same
-        else:
-
-            # fully simplified
-            return True
-
-    # checking if x / y is
-    elif op == "/":
-
-        # the coefficients are in lowest terms
-        if findGreatestCommonMultiple([x.coefficient, y.coefficient]) == 1:
-
-            # look to see if mono x and mono y have a common variable
-            for var in x.variables:
-
-                # var is a shared variable
-                if var in y.variables:
-
-                    # not yet simplified
-                    return False
-
-            # if the code has reached this point x / y is in simplest terms
-            return True
-
-        # at least the coefficients can be simplified further
-        else:
-
-            # not fully simplified
-            return False
-
-
 # takes in 2 dictionaries that represent variables from monomials
 def divideMonoVariables(variables1, variables2):
 
@@ -538,35 +466,30 @@ def humanReadableEquation(equation):
             # turn into string
             bracketHumanReadable = humanReadableEquation(item)
 
+            # multiplication before brackets
+            if readableEquation[-2] == "*":
+                readableEquation = readableEquation[:-3]
+
             # add string into readableEquation
             readableEquation += "(" + bracketHumanReadable + ")"
 
         # must be a monomial (class mono)
         else:
+
             # readable monomial in string form
             itemReadable = item.humanReadable()
 
             # negative number
             if '-' in itemReadable:
 
-                # remove negative
-                itemReadable = itemReadable.replace("-", "")
+                # readableEquation isn't empty and there is an addition operator on the far right
+                if len(readableEquation) != 0 and readableEquation[-2] == "+":
 
-                # keeps breaking program idk why
-                try:
-                    # if something happens and fucks everything up
-                    if readableEquation[-2] != "+":
+                    # remove negative from the monomial
+                    itemReadable = itemReadable.replace("-", "")
 
-                        print("SOMETHING BAD HAPPENDS")
-                        print(readableEquation)
-                        # stop program
-                        exit()
-
-                except:
-                    pass
-
-                # change + negative to subtraction
-                readableEquation = readableEquation[:-2] + "- "
+                    # change + negative to subtraction
+                    readableEquation = readableEquation[:-2] + "- "
 
             # add a string that represents item to our final string
             readableEquation += itemReadable
@@ -577,30 +500,21 @@ def humanReadableEquation(equation):
 
 # takes an equation (list) with monomials and operators in the form of strings
 # returns a simplified equation (list)
-def simplifyEquation(equation):
+def simplifyFullEquation(equation):
 
     # check if deepest brackets are simplified
     # if not then check if can distribute into brackets
 
     # only have 3 elements something like 4 + 2
     # send this to is single simple etc
-    smallExpression = []
 
-    # loop for the length of equation - 2
-    for index in range(0, len(equation) - 2, 1):
+    # iterate through equation
+    for item in equation:
 
-        # index is a nested list (brackets)
-        if type(equation[index]) == list:
+        # item is a set of brackets
+        if type(item) == list:
 
-            # add the nested list to a mini expression
-            smallExpression.append(equation[index])
-
-        # smallExpression is a complete expression and is ready to be tested
-        if len(smallExpression) == 3:
-
-            # smallExpression not in simplest form
-            if not isSingleSimplified(*smallExpression):
-                smallExpressionSolved = singleSimplify(smallExpression)
+            pass
 
 
 # takes an equation returns an equation with all subtraction replaced with addition and numbers
@@ -625,32 +539,6 @@ def purgeSubtraction(equation):
     # this might be redundant because it's a list but whatever
     # return modified equation
     return equation
-
-
-# finds operators that can not be used because they are already in simplest form
-def equationNoBracketsIsFullySimplified(equation):
-
-    # equation is a list with mono type and strings with operators inside
-    # the equation does not have brackets
-    # equation should go monomial operator monomial operator etc
-    # ending and starting with monomial
-
-    # loop through list starting with second element
-    # the second element should be an operator
-    for index in range(1, len(equation)-1, 1):
-
-        # current index is a operator
-        if equation[index] in "*/-+":
-
-            # is not simplified
-            if not isSingleSimplified(equation[index-1], equation[index], equation[index+1]):
-
-                # equation is not fully simplified
-                return False
-
-    # looped through everything and there is nothing that hasn't been fully simplified
-    # equation is fully simplified
-    return True
 
 
 # multiplies equations against each other like foil but with any number of equations with varying length\
@@ -736,6 +624,9 @@ def spliceSingleEquation(rawEquation):
     # initialize the equation return list
     finalEquation = []
 
+    # remember what was last added
+    lastWasMonomial = False
+
     # iterate through spliced data
     for chunkIndex in range(len(splicedMonomials)):
 
@@ -745,17 +636,37 @@ def spliceSingleEquation(rawEquation):
             # mini is an operator
             if mini[3] != '':
 
-                # add operator to final equation
-                finalEquation.append(mini[3])
+                # last added was a monomial (and finalEquation has something inside)
+                if len(finalEquation) != 0 and isinstance(finalEquation[-1], mono):
+
+                    # add operator to final equation
+                    finalEquation.append(mini[3])
+
+                # we just added an operator
+                lastWasMonomial = False
 
             # mini is a number
             elif mini[4] == '':
 
-                # create a mono and add it to our final equation
-                finalEquation.append(mono(mini[0], {mini[1]: mini[2]}))
+                # we added a monomial last iteration
+                if lastWasMonomial:
+
+                    # multiply the last monomial and the current monomial replace last monomial with result
+                    finalEquation[-1] = times(finalEquation[-1], mono(mini[0], {mini[1]: mini[2]}))[0]
+
+                # we didn't just add a monomial
+                else:
+
+                    # create a mono and add it to our final equation
+                    finalEquation.append(mono(mini[0], {mini[1]: mini[2]}))
+
+                # we just added a monomial
+                lastWasMonomial = True
 
             # mini is a placeholder for a set of brackets
             elif mini[4] != '':
+
+                # add placeholder to finalEquation
                 finalEquation.append(mini[4])
 
     # give spliced equation
@@ -951,23 +862,82 @@ def simplifyNoBracketEquation(equation):
     return equation
 
 
-rawEquationInput = "3 * (10 + (4 * 2) + 3) + (6 * 3)"
-rawEquationInput = "3 - 2 - 6"  # doesn't work throws an index error
-# rawEquationInput = "4 + ((8 - 3) - 4)"
+# takes an equation, returns a list of monomials inside equation (works with brackets)
+def getMonomialsInEquation(equation):
+
+    # a list of all monomials inside equation
+    allMonomials = []
+
+    # iterate through equation's items
+    for item in equation:
+
+        # item is a monomial
+        if isinstance(item, mono):
+
+            # add item to our list of monomials
+            allMonomials.append(item)
+
+        # item is a set of brackets (a mini equation)
+        elif type(item) == list:
+
+            # add each nested monomial inside of brackets (item) to our all monomials list
+            for nestedMonomial in getMonomialsInEquation(item):
+                allMonomials.append(nestedMonomial)
+
+    # return list of monomials inside equation
+    return allMonomials
 
 
+# takes a list with monomials inside (a polynomial), list should only have addition
+def factorPolynomial(poly):
+
+    # TODO: factor by difference of squares, factor by grouping, factor out
+
+    # get all monomials inside poly
+    monomialsInsidePoly = getMonomialsInEquation(poly)
+
+    # find the commonFactor of the monomials
+    commonFactor = findCommonMono(monomialsInsidePoly)
+
+    # common factor isn't just 1
+    if commonFactor != 1:
+
+        # iterate through each item in the polynomial
+        for itemIndex in range(len(poly)):
+
+            # item is a monomial
+            if isinstance(poly[itemIndex], mono):
+
+                # divide everything in the polynomial by our commonFactor
+                poly[itemIndex] = dividedBy(poly[itemIndex], commonFactor)[0]
+
+        # add common factor outside of polynomial
+        poly = [commonFactor, "*", poly]
+
+    # return factored out polynomial
+    return poly
+
+
+# takes in a list of monomials and groups them in brackets accordingly must be an even number of monomials
+def factorPolynomialByGrouping(poly):
+
+    # ask Renae about what makes a polynomial eligible for grouping
+    pass
+
+
+rawEquationInput = "-15a + -35a"
+
+# x^{2} * (2x + 6 + 4x^{2} + 27x)
+
+# splice equation
 spliced = spliceFullEquation(rawEquationInput)
 
-print("spliced: ", spliced)
-
+# get a readable version of the spliced equation a print it
 readable = humanReadableEquation(spliced)
 print("readable: ", readable)
 
-nonReadableAnswer = simplifyNoBracketEquation(spliced)
-print(nonReadableAnswer)
-print(humanReadableEquation(nonReadableAnswer))
-
-
+# print a string representation of the spliced equation after factoring it
+print(humanReadableEquation(factorPolynomial(spliced)))
 
 
 
