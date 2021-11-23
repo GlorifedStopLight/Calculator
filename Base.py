@@ -194,6 +194,40 @@ def times(x, y):
     return [mono(newCoefficient, newVariables).pemdasCleanUp()]
 
 
+# takes two polynomials (a list of monomials with addition operators) returns result
+def polyTimesPoly(x, y):
+
+    # new polynomial
+    unsimplifiedNewPolynomial = []
+
+    # iterate through each monomial in x
+    for itemX in x:
+
+        # itemX is a monomial not an operator
+        if isinstance(itemX, mono):
+
+            # iterate through each monomial in y
+            for itemY in y:
+
+                # itemY is also a monomial
+                if isinstance(itemY, mono):
+
+                    # multiply both monomials together
+                    resultOfItems = times(itemX, itemY)
+
+                    # add the itemX * itemY to our unsimplified polynomial
+                    unsimplifiedNewPolynomial.append(resultOfItems[0])
+
+                    # add an operator
+                    unsimplifiedNewPolynomial.append("+")
+
+    # remove the last element of the list (this is going to be an addition operator)
+    unsimplifiedNewPolynomial.pop(-1)
+
+    # return new polynomial
+    return unsimplifiedNewPolynomial
+
+
 # takes in two dictionaries returns a dictionary with all keys
 # if dictionaries have a common key add the values of that key from each dictionary
 def multiplyMonoVariables(dict1, dict2):
@@ -258,6 +292,23 @@ def dividedBy(x, y):
 
     # return altered monomials
     return [changedX, '/.', changedY]
+
+
+# do sqrt on a monomial
+def XRootOfSingleY(x: int, y: mono):
+
+    # the end result of simplification
+    endResult = []
+
+    # y has a negative coefficient and an even root (bad -> simplification will return a imaginary number)
+    if x % 2 == 0 and y.coefficient <= 0:
+
+        # return given monomial (no change)
+        return [y]
+
+    # coefficient can be simplified
+    if (y.coefficient ** round((1/x))**x) == y.coefficient:
+        endResult.append(None)
 
 
 # takes in a list of integers
@@ -454,6 +505,12 @@ def humanReadableEquation(equation):
                 # add division to equation
                 readableEquation += " / "
 
+            # item is simplified addition
+            elif item == "+.":
+
+                # add addition to equation
+                readableEquation += " + "
+
             # PROBABLY the only other character it would be is a type of brackets
             else:
 
@@ -466,9 +523,12 @@ def humanReadableEquation(equation):
             # turn into string
             bracketHumanReadable = humanReadableEquation(item)
 
-            # multiplication before brackets
-            if readableEquation[-2] == "*":
-                readableEquation = readableEquation[:-3]
+            try:
+                # multiplication before brackets
+                if readableEquation[-2] == "*":
+                    readableEquation = readableEquation[:-3]
+            except:
+                pass
 
             # add string into readableEquation
             readableEquation += "(" + bracketHumanReadable + ")"
@@ -925,19 +985,93 @@ def factorPolynomialByGrouping(poly):
     pass
 
 
-rawEquationInput = "-15a + -35a"
+# input an equation returns true if equation can be factored using difference of squares otherwise -> false
+def canUseDifferenceOfSquares(poly):
 
-# x^{2} * (2x + 6 + 4x^{2} + 27x)
+    # holds the monomials in polynomial
+    monomials = []
 
-# splice equation
-spliced = spliceFullEquation(rawEquationInput)
+    # loop through the polynomial
+    for item in poly:
 
-# get a readable version of the spliced equation a print it
-readable = humanReadableEquation(spliced)
-print("readable: ", readable)
+        # item is monomial
+        if isinstance(item, mono):
 
-# print a string representation of the spliced equation after factoring it
-print(humanReadableEquation(factorPolynomial(spliced)))
+            # add item to monomials list
+            monomials.append(item)
+
+    # not exactly two monomials in poly
+    if len(monomials) != 2:
+
+        # can not be factored using difference of squares
+        return False
+
+    # either both or neither monomials are negative
+    if (monomials[0].coefficient < 0) != (monomials[1].coefficient < 0):
+
+        # can not be factored using difference of squares
+        return False
+
+    # check if numbers can be used with with square root
 
 
 
+    # all conditions have been met poly can be factored using difference of squares
+    return True
+
+
+# assume the given polynomial is able to be factored using difference of squares return result
+def factorPolynomialByDifferenceOfSquares(poly):
+    pass
+
+
+# sorts a polynomial from the greatest exponent on the left to the lowest exponent on the right
+def sortPolynomialProper(poly):
+
+    # the sorted polynomial
+    sortedPoly = getMonomialsInEquation(poly)
+
+    # sort the list
+    sorted(sortedPoly, key=getExponentValues)
+
+    # reverse the list
+    sortedPoly.reverse()
+
+    # loop through equation add an addition operator inbetween each monomial
+    for index in range(1, len(sortedPoly) + 1, 2):
+
+        # insert + in list
+        sortedPoly.insert(index, "+")
+
+    # return a sorted polynomial
+    return sortedPoly
+
+
+# takes a monomial returns the value of the first exponent
+def getExponentValues(monomial):
+
+    # monomial has a variable
+    if len(monomial.variables.keys()) != 0:
+
+        return int(list(monomial.variables.values())[0])
+
+    # monomial has no variable
+    else:
+
+        # value of the exponent for the variable is 0
+        return 0
+
+
+rawEquation1 = "6 + x"
+
+rawEquation2 = "4 + x"
+
+print(humanReadableEquation(spliceFullEquation(rawEquation1)))
+print(humanReadableEquation(spliceFullEquation(rawEquation2)))
+
+newPoly = polyTimesPoly(spliceFullEquation(rawEquation1), spliceFullEquation(rawEquation2))
+newPoly = simplifyNoBracketEquation(newPoly)
+
+print(humanReadableEquation(newPoly))
+newPoly = sortPolynomialProper(newPoly)
+print(humanReadableEquation(newPoly))
