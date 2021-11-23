@@ -153,6 +153,12 @@ def minus(x, y):
     # the variables and exponents are the same
     if x.variables == y.variables:
 
+        # no point in returning zero
+        if x.coefficient - y.coefficient == 0:
+
+            # give back an empty list
+            return []
+
         # return answer
         return [mono(x.coefficient - y.coefficient, x.variables).pemdasCleanUp()]
 
@@ -169,6 +175,12 @@ def plus(x, y):
 
     # the variables and exponents are the same
     if x.variables == y.variables:
+
+        # no point in returning zero
+        if x.coefficient + y.coefficient == 0:
+
+            # give an empty list
+            return []
 
         # return answer
         return [mono(x.coefficient + y.coefficient, x.variables).pemdasCleanUp()]
@@ -224,8 +236,33 @@ def polyTimesPoly(x, y):
     # remove the last element of the list (this is going to be an addition operator)
     unsimplifiedNewPolynomial.pop(-1)
 
+    simplifyNoBracketEquation(unsimplifiedNewPolynomial)
+
     # return new polynomial
     return unsimplifiedNewPolynomial
+
+
+# adds two polynomials together
+def polyPlusPoly(x, y):
+
+    # take out all the monomials in both lists and put them into the same list
+    simplifyMe = [*x, "+", *y]
+
+    # sort the polynomial
+    simplifyMe = sortPolynomialProper(simplifyMe)
+
+    # return the polynomial simplified
+    return simplifyNoBracketEquation(simplifyMe)
+
+
+# subtracts one polynomial (x) from the other (y)
+def polyMinusPoly(x, y):
+
+    # distribute the negative
+    negativeY = polyTimesPoly(y, [mono(-1, {})])
+
+    # add two polynomials together and return that value
+    return polyPlusPoly(x, negativeY)
 
 
 # takes in two dictionaries returns a dictionary with all keys
@@ -899,6 +936,12 @@ def simplifyNoBracketEquation(equation):
                         # add miniAnswer to equation
                         equation.insert(customIndex + itemIndex - 1, miniAnswer[itemIndex])
 
+                    # there was nothing inside miniAnswer
+                    if miniAnswer == []:
+
+                        # remove unused operator
+                        del equation[customIndex-1]
+
                     # make a new for loop
                     newForLoop = True
 
@@ -1032,13 +1075,13 @@ def sortPolynomialProper(poly):
     sortedPoly = getMonomialsInEquation(poly)
 
     # sort the list
-    sorted(sortedPoly, key=getExponentValues)
+    sortedPoly.sort(key=getExponentValues)
 
     # reverse the list
     sortedPoly.reverse()
 
-    # loop through equation add an addition operator inbetween each monomial
-    for index in range(1, len(sortedPoly) + 1, 2):
+    # loop through equation add an addition operator in between each monomial
+    for index in range(1, len(sortedPoly)*2 - 1, 2):
 
         # insert + in list
         sortedPoly.insert(index, "+")
@@ -1053,6 +1096,7 @@ def getExponentValues(monomial):
     # monomial has a variable
     if len(monomial.variables.keys()) != 0:
 
+        # return the exponent
         return int(list(monomial.variables.values())[0])
 
     # monomial has no variable
@@ -1062,16 +1106,66 @@ def getExponentValues(monomial):
         return 0
 
 
-rawEquation1 = "6 + x"
+# takes two polynomials divides them returns stuff etc
+def polyLongDivision(dividend, divisor):
 
-rawEquation2 = "4 + x"
+    # the result of dividend / divisor
+    endResult = []
+
+    # the term at the front of divisor
+    divisorFrontTerm = divisor[0]
+
+    # the variable name
+    variableName = list(dividend[0].variables.keys())[0]
+
+    print("dividend: ", humanReadableEquation(dividend))
+
+    # stop when the front number in the dividend has an exponent less than that of the divisor's front end exponent
+    while dividend[0].variables != {} and dividend[0].variables[variableName] >= divisor[0].variables[variableName]:
+
+        # the term at the front of dividend
+        dividendFrontTerm = dividend[0]
+
+        # the number that when multiplied by the divisor front term will equal the dividend front term
+        singleUpperTable = dividedBy(dividendFrontTerm, divisorFrontTerm)
+
+        # add this to our end result
+        endResult.append(*singleUpperTable)
+        endResult.append("+")
+
+        # the polynomial that will be subtracted from the dividend
+        subtractThisPolynomial = polyTimesPoly(singleUpperTable, divisor)
+
+        # subtract (subtractThisPoly) from dividend
+        dividend = polyMinusPoly(dividend, subtractThisPolynomial)
+
+        print("dividend: ", humanReadableEquation(dividend))
+
+    # no remainder
+    if dividend is []:
+
+        # remove the addition sign at the end of equation
+        endResult.pop(-1)
+
+    # add the remainder to the endResult
+    else:
+
+        # add remainder to result
+        endResult.append([dividend, "/", divisor])
+
+    # return the result of divisor/dividend
+    return endResult
+
+
+rawEquation1 = "2x^{4} + 3x - 1"
+
+rawEquation2 = "x^{2} + 2x + 1"
 
 print(humanReadableEquation(spliceFullEquation(rawEquation1)))
+print("/")
 print(humanReadableEquation(spliceFullEquation(rawEquation2)))
 
-newPoly = polyTimesPoly(spliceFullEquation(rawEquation1), spliceFullEquation(rawEquation2))
-newPoly = simplifyNoBracketEquation(newPoly)
+newPoly = polyLongDivision(spliceFullEquation(rawEquation1), spliceFullEquation(rawEquation2))
 
-print(humanReadableEquation(newPoly))
-newPoly = sortPolynomialProper(newPoly)
+print()
 print(humanReadableEquation(newPoly))
