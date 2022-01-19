@@ -858,3 +858,8 @@ def findExponentValues(monomial):
 
         # value of the exponent for the variable is 0
         return 0
+
+
+# expands a single logarithm
+def expandSingleLogarithm(equation, logBase):
+    pass

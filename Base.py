@@ -26,5 +26,11 @@ options = [
     [findGreatestCommonMultiple, [9, 27, 12], inf]
 ]
 
+i = 0
+# slaveToUser(options[i][0], options[i][1])
 
-slaveToUser(options[0][0], options[0][1])
+equation = spliceFullEquation(["xy"])
+
+expandSingleLogarithm(equation, 3)
+
+
