@@ -144,6 +144,18 @@ class mono:
         return mono(self.coefficient, self.variables).pemdasCleanUp()
 
 
+class log:
+    def __init__(self, base, baseOf):
+        self.base = base
+        self.baseOf = baseOf
+
+
+class root:
+    def __init__(self, XRoot, inside):
+        self.XRoot = XRoot
+        self.inside = inside
+
+
 # simplifies a equation with no brackets
 def simplifyNoBracketEquation(equation):
 
@@ -862,4 +874,34 @@ def findExponentValues(monomial):
 
 # expands a single logarithm
 def expandSingleLogarithm(equation, logBase):
-    pass
+    """
+    equation must be simplified so that all the exponents have been distributed
+    assume that the only operators are addition,
+    assume that there are no roots
+    """
+
+    expandedLogEquation = []
+
+    # loop through each item in equation
+    for item in equation:
+
+        # item is a monomial
+        if isinstance(item, mono):
+
+            # can be taken apart into addition
+            if len(item.variables) > 0:
+
+                # loop through each variable in the monomial (item) add it to the expanded equation.
+                for variable in item.variables:
+
+                    # the variable has an exponent value of 1
+                    if item.variables[variable] == 1:
+
+                        expandedLogEquation.append(log(logBase, variable))
+
+                    else:
+                        expandedLogEquation.append(mono(1, {}))
+                        expandedLogEquation.append("*")
+                        expandedLogEquation.append(log(logBase, variable))
+
+
